@@ -1,0 +1,198 @@
+---
+title: "Predictive Analysis Problem Set 2"
+author: "Deeptarka Saha 732"
+date: "2026-02-12"
+output: html_document
+---
+# PROBLEM SET 2
+
+
+## Problem 2:  Problem to demonstrate the role of qualitative (nominal) predictors in addition to quantitative predictors in multiple linear regression
+```{r}
+library(ISLR)
+library(stargazer)
+
+data(Credit)
+attach(Credit)
+
+str(Credit)
+
+```
+```{r}
+# (a) Regress balance on gender only
+fit1 <- lm(Balance ~ Gender, data = Credit)
+summary(fit1)
+```
+```{r}
+# (b) Regress balance on gender and ethnicity
+fit2 <- lm(Balance ~ Gender + Ethnicity, data = Credit)
+summary(fit2)
+```
+```{r}
+# (c) Regress balance on gender, ethnicity and income
+fit3 <- lm(Balance ~ Gender + Ethnicity + Income, data = Credit)
+summary(fit3)
+```
+```{r}
+# (d) Output all regressions in one table
+stargazer(fit1, fit2, fit3,
+          type = "text",
+          title = "Regression Results",
+          dep.var.labels = "Credit Card Balance",
+          covariate.labels = c("Male",
+                               "Asian",
+                               "Caucasian",
+                               "Income"),
+          omit.stat = c("f", "ser"))
+```
+
+(e)How Gender affects Balance in model (a):
+
+Gender coefficient shows the difference in average balance between males and females.
+
+If positive and significant → males carry higher balance than females.
+
+
+model (b):
+
+Gender effect is now controlled for ethnicity.
+
+model (c):
+
+Gender effect is controlled for ethnicity and income.
+
+Usually becomes statistically insignificant.
+
+
+(f)  Compare the average credit card balance of a male African with a male
+Caucasian on the basis of model (b).
+```{r}
+coef(fit2)
+#balance_estimate_african=beta_not + beta1
+avg.balance.male.african=531.00+46.01;
+avg.balance.male.african
+#balance_estimate_caucasian=beta_not + beta1 + beta3
+avg.balance.male.caucasian=531.00+46.01+12;
+avg.balance.male.caucasian
+# therefore diff = beta3 = 12
+```
+
+So the difference equals the coefficient of Caucasian.If β₃ is small and insignificant → no meaningful difference.
+
+```{r}
+# (g) Compare the average credit card balance of a male African with a male
+#Caucasian when each earns 100,000 dollars. For comparison, use the model in (c).
+balance.male.african_amr=230.029 + 6.054*100000
+balance.male.african_amr
+balance.male.caucasian= 230.029 + 6.054*100000 + 6.447
+balance.male.caucasian
+diff1=6.447
+```
+Ans: Its  the coefficient of Caucasian
+
+(h)
+The difference remains β₃ in both cases.
+
+Adding income does NOT change the difference when income is fixed equal.
+
+This suggests part of ethnicity difference is explained by income.
+
+(i) Predict balance for Female Asian with income = 2,000,000
+
+For model (c):
+```{r}
+newdata = data.frame(
+  Gender = "Female",
+  Ethnicity = "Asian",
+  Income = 2000000
+)
+predict(fit3, newdata)
+```
+(j) Compare Adjusted R²
+```{r}
+summary(fit1)$adj.r.squared
+summary(fit2)$adj.r.squared
+summary(fit3)$adj.r.squared
+```
+We observe :
+
+Model (a): Very low Adjusted R²
+
+Model (b): Slight improvement
+
+Model (c): Much higher Adjusted R²
+
+
+ Therefore Model (c) is the preferred here because:
+
+Highest Adjusted R²
+
+Income is highly significant
+
+Better explanatory power
+
+
+## Problem 4: Problem to demonstrate the impact of ignoring interaction term in multiple linear regression.
+```{r}
+set.seed(123)
+
+# Simulation settings
+n = 100
+R = 1000
+
+simulate_mse = function(beta0, beta1, beta2, beta3) {
+  
+  mse_correct = numeric(R)
+  mse_naive = numeric(R)
+  
+  for (r in 1:R) {
+    
+    # Step 1
+    x1 = rnorm(n, 0, 1);
+    x1
+    
+    # Step 2
+    x2 = rbinom(n, 1, 0.3);
+    x2
+    
+    # Step 3
+    eps = rnorm(n, 0, 1)
+    
+    y = beta0 + beta1*x1 + beta2*x2 + beta3*(x1*x2) + eps;
+    y
+    
+    # Step 4(i): Correct model
+    fit1 = lm(y ~ x1 * x2)
+    yhat1 = predict(fit1)
+    mse_correct[r] = mean((y - yhat1)^2);
+    mse_correct
+    
+    # Step 4(ii): Naive model (no interaction)
+    fit2 = lm(y ~ x1 + x2)
+    yhat2 = predict(fit2)
+    mse_naive[r] = mean((y - yhat2)^2);
+    mse_naive
+  }
+  
+  return(c(mean(mse_correct), mean(mse_naive)))
+}
+
+# Case 1: beta3 = 0.001 (almost no interaction)
+res1 = simulate_mse(-2.5, 1.2, 2.3, 0.001)
+
+# Case 2: beta3 = 3.1 (strong interaction)
+res2 = simulate_mse(-2.5, 1.2, 2.3, 3.1)
+
+res1
+res2
+
+```
+Final Interpretation :
+
+(1) When the interaction coefficient is nearly zero, omitting the interaction term does not materially affect MSE.
+
+(2) When the interaction effect is large, ignoring it substantially increases MSE.
+
+(3) Therefore, excluding important interaction terms leads to model misspecification and poorer predictive performance.
+
+

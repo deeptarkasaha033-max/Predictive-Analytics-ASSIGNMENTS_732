@@ -1,0 +1,228 @@
+---
+title: "PREDICTIVE PROBLEM SET 2"
+author: "Deeptarka Saha 732"
+date: "2026-01-30"
+output: word_document
+---
+# Qs 1
+
+```{r}
+rm(list=ls())
+
+#Step 1: Graph the population regression line
+x=seq(from=5,to=10,length.out=200);x
+Y=2+(3*x)
+plot(x,Y,type='l',lwd=2)
+```
+
+```{r}
+# Step 2
+n=50
+set.seed(123)
+xi=runif(n,5,10);xi
+ei=rnorm(n,0,4);ei
+```
+
+```{r}
+#Step 3:
+# Graph the population regression line
+x=seq(from=5,to=10,length.out=200);x
+Y=2+(3*x)
+plot(x,Y,type='l',lwd=2)
+set.seed(123)
+n=50
+xi=runif(n,5,10);xi
+ei=rnorm(n,0,4);ei
+yi=2+(3*xi)+ei;yi
+points(xi,yi)
+lin_reg=lm(yi~xi);lin_reg
+coef(lin_reg)
+abline(lin_reg,col="red")
+```
+
+```{r}
+#Step 4:
+x=seq(from=5,to=10,length.out=200);x
+Y=2+(3*x)
+plot(x,Y,type='l',lwd=2)
+n=50
+xi=runif(n,5,10);xi
+ei=rnorm(n,0,4);ei
+yi=2+(3*xi)+ei;yi
+points(xi,yi)
+lin_reg=lm(yi~xi);lin_reg
+coef(lin_reg)
+abline(lin_reg,col="red")
+set.seed(123)
+xr=matrix(runif(n*5,5,10),ncol=5,nrow=n)
+er=matrix(rnorm(n*5,0,4),ncol=5,nrow=n)
+yr=matrix(0,ncol=5,nrow=n)
+intercept=rep(0,5)
+slope=rep(0,5)
+for(i in 1:5)
+{
+  yr[,i]=2+(3*xr[,i])+er[,i]
+  lin_reg=lm(yr[,i]~xr[,i]) 
+  intercept[i]=coef(lin_reg)[1]
+  slope[i]=coef(lin_reg)[2]
+  abline(lin_reg,col=i+1,lwd=2)
+}
+Estimates=data.frame(intercept,slope);Estimates
+
+legend('topleft',
+       legend=c("PRL",
+                "SRL 1",
+                "SRL 2",
+                "SRL 3",
+                "SRL 4",
+                "SRL 5"),
+       col=1:6,
+       lwd=2)
+title(main="Population Regression Line vs Sample Regression Lines")
+```
+
+The differences between the 5 lines represent estimation error due to:
+
+i) Random noise
+
+ii)Finite sample space
+
+OVerall the population regression line is fixed,but the least squares regression line is a random line because it depends on the random sample.
+
+# Qs 2
+
+```{r}
+rm(list=ls())
+
+#Step 1:
+set.seed(123)
+n=50
+xi=runif(n,5,10)
+ei=rnorm(n)
+mean_xi=mean(xi)
+xii=xi-mean_xi;xii
+yi=2+3*xii+ei;yi
+```
+```{r}
+#Step 2:
+lin_reg=lm(yi~xii);lin_reg
+coef(lin_reg)
+```
+```{r}
+#Step 3:
+b0=seq(1,3,by=0.000001)
+length(b0)
+b1=seq(3,4,by=0.000001)
+RSS=rep(0,2000001)
+for(i in 1:2000001)
+{
+  RSS[i]=sum((yi-b0[i]-(b1[i]*xii))^2)
+}
+length(RSS)
+
+which(RSS==0,arr.ind=TRUE)
+```
+
+
+# Qs 3
+```{r}
+#Step 1:
+rm(list=ls())
+n=50
+x=runif(n)
+x
+e=rnorm(n)
+e
+b0=2
+b1=3
+y=b0+(b1*x)+e
+y
+```
+```{r}
+#Step 2:
+R=1000
+lin_reg=lm(y~x)
+coef(lin_reg)
+set.seed(123)
+xr=matrix(runif(1000*n),ncol=n,nrow=1000)
+er=matrix(rnorm(1000*n),ncol=n,nrow=1000)
+yr=matrix(0,ncol=n,nrow=1000)
+b0_est=rep(0,1000)
+b1_est=rep(0,1000)
+for(i in 1:1000)
+{
+  for(j in 1:n)
+  {
+    yr[i,j]=b0+b1*xr[i,j]+er[i,j]
+  }
+  lin_reg=lm(yr[i,]~xr[i,])
+  b0_est[i]=coef(lin_reg)[1]
+  b1_est[i]=coef(lin_reg)[2]
+}
+b0_estimated=mean(b0_est);b0_estimated
+b1_estimated=mean(b1_est);b1_estimated
+se_b0_estmated=sd(b0_est);se_b0_estmated
+se_b1_estimated=sd(b1_est);se_b1_estimated
+```
+# QS 4
+```{r}
+# Load MASS library
+library(MASS)
+
+# Load Boston dataset
+data(Boston)
+
+head(Boston)
+
+```
+a)
+```{r}
+# Model 1: medv ~ crim
+m1 = lm(medv ~ crim, data = Boston)
+
+# Model 2: medv ~ nox
+m2 = lm(medv ~ nox, data = Boston)
+
+# Model 3: medv ~ black
+m3 = lm(medv ~ black, data = Boston)
+
+# Model 4: medv ~ lstat
+m4 = lm(medv ~ lstat, data = Boston)
+
+# Presenting Output in single table
+
+summary_table <- data.frame(
+  Model = c("medv ~ crim", "medv ~ nox", "medv ~ black", "medv ~ lstat"),
+  Intercept = c(coef(m1)[1], coef(m2)[1], coef(m3)[1], coef(m4)[1]),
+  Slope = c(coef(m1)[2], coef(m2)[2], coef(m3)[2], coef(m4)[2]),
+  R_squared = c(summary(m1)$r.squared,
+                summary(m2)$r.squared,
+                summary(m3)$r.squared,
+                summary(m4)$r.squared),
+  P_value = c(summary(m1)$coefficients[2,4],
+              summary(m2)$coefficients[2,4],
+              summary(m3)$coefficients[2,4],
+              summary(m4)$coefficients[2,4])
+)
+print(summary_table)
+
+```
+
+b) The best fit is the model with the highest R² (explains the most variation in medv). Here medv ~ lstat gives the best fit as it usually has the largest R² (around 0.54)
+
+c) 1. Crime rate (crim)
+Here coefficient is negative means as crime rate increases, median house value decreases.
+Usefulness: Significant predictor, but explains only a moderate amount of variation
+
+2. Nitrogen oxides(nox)
+Coefficient is negative meaning higher pollution implies lower housing prices.
+Usefulness: Also significant but still not the strongest single predictor.Environmental quality clearly matters.
+
+3. Proportion of Blacks(black)
+Coefficient is usually small and positive implies slight association with higher prices.
+Usefulness: Statistically significant but not very strong in explaining variation alone.
+
+4. Lower stats population (lstat)
+Coefficient is strongly negative.
+Usefulness: Most useful single predictor here — highest R² and strong significance.
+
