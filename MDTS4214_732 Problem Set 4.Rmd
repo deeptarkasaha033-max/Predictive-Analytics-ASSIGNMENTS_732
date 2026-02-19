@@ -1,0 +1,90 @@
+---
+title: "PROBLEM SET 4"
+author: "Deeptarka Saha 732"
+date: "2026-02-19"
+output: html_document
+---
+
+# PROBLEM SET 4
+
+
+## Problem 1: Problem to demonstrate multicollinearity
+```{r}
+rm(list=ls())
+library(ISLR)
+attach(Credit)
+head(Credit)
+df=Credit[,c(3,4,6,12)]
+head(df)
+```
+```{r}
+#(a)
+par(mfrow=c(1,2))
+plot(Limit,Rating,main="Scatterplot of Rating vs Limit")
+plot(Limit,Age,main="Scatterplot of Age vs Limit")
+par(mfrow=c(1,1))
+```
+Comment:
+
+Age vs Limit:
+
+1. Points are widely scattered.
+
+2. Age does not appear strongly related to credit limit.
+
+
+Rating vs Limit:
+
+1. Strong positive linear relationship.
+
+2. As Rating increases, Limit increases almost perfectly linearly.
+
+```{r}
+#(b)
+fit1=lm(Balance~Age+Limit)
+fit2=lm(Balance~Rating+Age+Limit)
+fit3=lm(Balance~Rating+Limit)
+library(stargazer)
+stargazer(fit1,fit2,fit3,type="text",out="f2.txt")
+```
+Observed Marked Differences :
+
+The major difference appears in Model (ii):
+
+In Model (i), Limit is highly significant
+
+In Model (iii), Rating is highly significant
+
+In Model (ii)** (when both Rating and Limit are included) one of them becomes insignificant or changes sign
+
+```{r}
+#(c) VIF
+library(car)
+vif(fit1)
+vif(fit2)
+vif(fit3)
+```
+We  observe:
+Very high VIF for Limit and Rating ,while low VIF for Age. Hence, strong multicollinearity exists between them.
+
+## Problem 2 :
+```{r}
+rm(list=ls())
+library(MASS)
+head(Boston)
+dim(Boston)
+df=Boston
+df.cont=Boston
+df.cont$chas = NULL
+df.cont$rad = NULL
+model=lm(medv~.,data=df.cont)
+summary(model)
+residualPlot(model)
+std.resid=rstandard(model)
+```
+We observe :
+A few observations have large studentized residuals → response outliers
+
+Some observations have high leverage (extreme crim or lstat values) using hat- values.
+
+A small number exceed Cook’s distance threshold → influential points
