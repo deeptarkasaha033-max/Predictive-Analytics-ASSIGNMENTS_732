@@ -1,0 +1,100 @@
+---
+title: "Predictive Analytics Problem Set 4"
+author: "Deeptarka Saha"
+date: "2026-03-29"
+output: html_document
+---
+
+## 1. Problem to demonstrate the fitting of a binary response variable using logistic regression.
+
+```{r}
+# a) Test- Train split
+library(ISLR)
+
+data(Weekly)
+
+# Training: 1990–2008
+train = Weekly[Weekly$Year <= 2008, ]
+
+# Test: 2009–2010
+test = Weekly[Weekly$Year > 2008, ]
+
+train
+test
+```
+```{r}
+# b) Logistic Regression Model
+fit = glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume,
+          data = train, family = binomial)
+
+summary(fit)
+```
+We observe that, typically no predictors are stongly significant at 5% level.
+Usually Lag 2 test has the smallest p value.
+
+Interpretation of  coefficient corresponding to Lag 2 test :
+ 
+ If coefficient  of Lag2 ≈ 0.01(say):
+ 
+ A 1 unit increase in Lag2 increases log-odds of “Up” by 0.05
+
+Odds increase by:
+𝑒^0.01≈1.010 
+
+```{r}
+# c) Odds of market going “up” at median values of the predictors.
+medians = apply(train[, -9], 2, median)  # exclude Direction
+
+log_odds = predict(fit, newdata = as.data.frame(t(medians)), type = "link")
+
+odds = exp(log_odds)
+odds
+```
+here, Odds = P(Up)/P(Down)
+
+```{r}
+# e) Optimal Cutoff & Test Performance.
+library(pROC)
+prob_test = predict(fit, newdata = test, type = "response") # probabilities on test data
+prob_test
+
+# Finding Optimal Cutoff
+roc_test = roc(test$Direction, prob_test)
+
+best=coords(roc_test, "best", ret = "threshold", best.method = "youden");
+c_star=best[1]
+```
+```{r}
+# Predictions
+prob_test = predict(fit, newdata = test, type = "response")
+
+pred_class = ifelse(prob_test > c_star, "Up", "Down")
+pred_class = factor(pred_class, levels = c("Down", "Up"))
+
+# Checking lengths
+length(pred_class)
+length(test$Direction)
+
+# Confusion matrix
+str(prob_test)
+str(pred_class)
+str(test$Direction)
+
+mean(pred_class != test$Direction) # Test Error Rate
+```
+```{r}
+# f) Model with Lag 1 and Lag 2 only
+fit2 = glm(Direction ~ Lag1 + Lag2,
+           data = train, family = binomial)
+
+prob_test2 = predict(fit2, newdata = test, type = "response")
+
+pred2 = ifelse(prob_test2 > 0.5, "Up", "Down")
+
+mean(pred2 != test$Direction)
+```
+Using only Lag1 & Lag2 gives comparable performance.
+
+Here Test error is almost similar or slightly better.
+
+Simple models performs well.
