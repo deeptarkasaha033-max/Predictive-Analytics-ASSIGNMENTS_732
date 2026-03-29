@@ -1,0 +1,152 @@
+---
+title: "MDTS4214 PROBLEM SET 7"
+author: "Deeptarka Saha"
+date: "2026-03-29"
+output: html_document
+---
+# Comparison of least squares, ridge regression, LASSO and Elastic Net
+```{r}
+rm(list=ls())
+library(ISLR)
+df=na.omit(Hitters) #1. Removing the missing rows
+dim(df)
+#2. Splitting into Train and Test
+set.seed(123)
+test.id=sample(1:263,100)
+train.data=df[-test.id,] #Training data
+head(train.data)
+test.data=df[test.id,] #Test data
+head(test.data)
+dim(train.data);dim(test.data)
+#Train the model using least squares and report the train MSE and test MSE.
+m1=lm(Salary~.,data=train.data)
+mse.train=1/163*(sum((train.data$Salary-predict(m1))^2))
+y.hat.test=predict(m1,newdata=test.data)
+mse.test=mean((test.data$Salary-y.hat.test)^2)
+mse.train
+mse.test
+
+#3. Fit Ridge Regression
+library(glmnet)
+lambda.grid = 10^seq(10, -2, length = 100)
+x=model.matrix(Salary~.,train.data)[,-1]
+x.test=model.matrix(Salary~.,test.data)[,-1]
+head(x)
+ridge.model=glmnet(x, train.data$Salary, alpha = 0,lambda=lambda.grid)
+dim(coef(ridge.model)) # (i) Dimension of coefficient matrix
+
+beta50 = coef(ridge.model)[,50]
+beta60 = coef(ridge.model)[,60]
+
+l2.50 = sqrt(sum(beta50^2))
+l2.60 = sqrt(sum(beta60^2))
+
+l2.50
+l2.60 # (ii) L2 Norms
+# Interpretation :
+# As λ increases → coefficients shrink → L2 norm decreases
+# So, l2.60 < l2.50
+
+pred50 = predict(ridge.model, s = lambda.grid[50], newx = x.test)
+pred60 = predict(ridge.model, s = lambda.grid[60], newx = x.test)
+
+mse50 = mean((test.data$Salary - pred50)^2)
+mse60 = mean((test.data$Salary - pred60)^2)
+
+mse50
+mse60 # (iii) Test MSE for λ
+
+```
+4. Plot of Coefficients vs λ
+```{r}
+plot(ridge.model, xvar="lambda", label=TRUE)
+
+```
+Interpretation:
+As λ increases → coefficients shrink toward 0.
+
+Some shrink faster than others.
+
+No coefficient becomes exactly zero.
+
+5. Plot vs L2 Norm Ratio
+```{r}
+plot(ridge.model, xvar="norm", label=TRUE)
+```
+Interpretation :
+
+The graph becomes more intuitive than λ.
+
+It Starts from:
+1 → least squares
+
+towards 0 → heavy shrinkage
+
+Shape remains simlar, just rescaled.
+
+6.Ridge with cross validation
+```{r}
+set.seed(123)
+cv.ridge=cv.glmnet(x, train.data$Salary, alpha=0)
+
+best.lambda=cv.ridge$lambda.min
+best.lambda
+
+pred=cv.predict=cv.predict <- predict(cv.ridge, s=best.lambda, newx=x.test)
+
+mse.cv=mean((test.data$Salary - pred)^2)
+mse.cv
+```
+7. LASSO Regression
+```{r}
+set.seed(123)
+cv.lasso=cv.glmnet(x, train.data$Salary, alpha=1)
+
+best.lambda.lasso=cv.lasso$lambda.min
+
+lasso.pred=predict(cv.lasso, s=best.lambda.lasso, newx=x.test)
+
+mse.lasso=mean((test.data$Salary - lasso.pred)^2)
+mse.lasso
+
+coef.lasso=coef(cv.lasso, s=best.lambda.lasso)
+
+sum(coef.lasso!=0) # No. of non-zero coefficients.
+```
+8. Elastic Net
+```{r}
+set.seed(123)
+cv.enet=cv.glmnet(x, train.data$Salary, alpha=0.5)
+
+best.lambda.enet=cv.enet$lambda.min
+
+enet.pred=predict(cv.enet, s=best.lambda.enet, newx=x.test)
+
+mse.enet=mean((test.data$Salary - enet.pred)^2)
+mse.enet
+
+coef.enet=coef(cv.enet, s=best.lambda.enet)
+coef.enet[coef.enet!=0] # Non-zero Coefficients
+sum(coef.enet!=0)
+```
+9. Comparison of Key features of the Test mse of different Regression techniques:
+
+For, Least Squares →  No regularization
+
+ Ridge	 →  	Shrinkage
+ 
+ LASSO	 →  	Variable selection
+ 
+ Elastic Net	 →  	Hybrid
+ 
+ Conclusion:
+ 
+ Ridge reduces variance keeping all predictors.
+ 
+LASSO removes irrelevant predictors.
+
+Elastic Net combines both advantages of Ridge and LASSO.
+
+Cross-validation gives optimal λ.
+
+So,Regularized models predict the Salary of a baseball player more accurately than least squares.
